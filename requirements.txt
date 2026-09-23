@@ -4,6 +4,7 @@ scipy>=1.10
 scikit-image>=0.22
 pandas>=1.5
 matplotlib>=3.6
+pillow>=9.0          # imported directly for text, scale bars and previews
 
 # Microscopy I/O
 nd2>=0.10          # Nikon .nd2 reader (Bio-Formats-free)

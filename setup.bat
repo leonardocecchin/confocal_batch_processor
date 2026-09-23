@@ -59,12 +59,21 @@ if errorlevel 1 (
 
 echo(
 echo ==^> Installing dependencies ^(a few minutes the first time^)
-".venv\Scripts\python.exe" -m pip install --quiet --upgrade pip
-".venv\Scripts\python.exe" -m pip install --quiet -r requirements.txt
+echo     a full log is written to setup_log.txt
+".venv\Scripts\python.exe" -m pip install --upgrade pip  > setup_log.txt 2>&1
+".venv\Scripts\python.exe" -m pip install -r requirements.txt >> setup_log.txt 2>&1
 if errorlevel 1 (
     echo(
-    echo     Installation failed. The most common causes are no internet access
-    echo     or a corporate proxy. The full error is above.
+    echo     Installation FAILED. The last lines of setup_log.txt were:
+    echo(
+    powershell -NoProfile -Command "Get-Content setup_log.txt -Tail 15" 2>nul
+    echo(
+    echo     Common causes on Windows:
+    echo       * no internet, or a university/corporate proxy blocking pypi.org
+    echo       * the project folder is inside OneDrive - move it to C:\Users\%USERNAME%\confocal
+    echo       * antivirus locking files while pip unpacks them
+    echo(
+    echo     The full log is in setup_log.txt next to this script.
     pause
     exit /b 1
 )
@@ -74,9 +83,26 @@ echo ==^> Checking the install
 ".venv\Scripts\python.exe" tools\check_install.py
 if errorlevel 1 (
     echo(
-    echo     The environment is not healthy - see the message above.
-    pause
-    exit /b 1
+    echo ==^> Some packages did not install correctly. Repairing them...
+    echo(
+    set "BROKEN="
+    for /f "usebackq delims=" %%P in (`".venv\Scripts\python.exe" tools\check_install.py --names`) do (
+        echo     reinstalling %%P
+        ".venv\Scripts\python.exe" -m pip install --force-reinstall --no-cache-dir %%P >> setup_log.txt 2>&1
+    )
+    echo(
+    echo ==^> Checking again
+    ".venv\Scripts\python.exe" tools\check_install.py
+    if errorlevel 1 (
+        echo(
+        echo     Still not healthy. Please send setup_log.txt and the message above.
+        echo(
+        echo     Two things fix this most of the time:
+        echo       1^) move the project out of OneDrive, e.g. to C:\Users\%USERNAME%\confocal
+        echo       2^) delete the .venv folder and run setup.bat again
+        pause
+        exit /b 1
+    )
 )
 
 echo(

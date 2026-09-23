@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import gc
+import multiprocessing
 import os
 import signal
 import sys
@@ -900,7 +901,19 @@ def run_batch(
         # Deliberately not a `with` block. The context manager would call
         # shutdown() a second time with different arguments, and the two calls
         # fight over whether the queued work is cancelled or waited for.
-        pool = ProcessPoolExecutor(max_workers=workers, initializer=_worker_init)
+        #
+        # "spawn", never "fork" (the Linux default before Python 3.14): a
+        # forked worker inherits the GUI's heap, including tkinter objects
+        # left over from closed preview windows. The gc.collect() at the end
+        # of each image then runs their __del__, which calls into Tcl and
+        # waits forever for a Tk main thread that does not exist in the child
+        # -- every worker froze after its first image. A spawned worker starts
+        # clean; it costs a second or two of imports, once per worker.
+        pool = ProcessPoolExecutor(
+            max_workers=workers,
+            initializer=_worker_init,
+            mp_context=multiprocessing.get_context("spawn"),
+        )
         try:
             # Submit in a sliding window rather than all at once. The pool
             # pre-loads its call queue, and anything already queued there

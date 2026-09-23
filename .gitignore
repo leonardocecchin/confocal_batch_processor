@@ -26,3 +26,6 @@ images/
 output/
 *.nd2
 settings.json
+
+# Windows setup log
+setup_log.txt

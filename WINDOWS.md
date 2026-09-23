@@ -47,6 +47,12 @@ downloaded file → **Extract All**. Then skip to step 4.)*
 
 ## Step 3 — Get the code
 
+> **Put it outside OneDrive.** A OneDrive-synced folder is the single most
+> common cause of a broken install here: OneDrive syncs and locks files while
+> pip is still unpacking them, and packages end up half-written. Deep OneDrive
+> paths can also exceed Windows' path length limit. Use something short and
+> local, such as `C:\Users\<you>\confocal`.
+
 Open a terminal in the folder where you keep your projects — open the folder in
 File Explorer, then type `cmd` in the address bar and press Enter — and run:
 
@@ -86,6 +92,8 @@ like: right-click `run_gui.bat` → *Show more options* → *Send to* → *Deskt
 
 | What you see | What to do |
 |---|---|
+| `Missing packages: pandas` (or any other) | The install did not complete. `setup.bat` now retries the failing packages by itself; if it still fails, the reason is in `setup_log.txt` next to the script. Usually OneDrive, a proxy, or antivirus — see below. |
+| `These are installed but will not import` | The package is there but damaged, typically a half-written file. The script prints the exact error and the command to repair just that package. |
 | `Python 3.10 or newer was not found` | Python is not on PATH. Re-run the Python installer, choose *Modify*, tick **Add python.exe to PATH**, and restart the terminal. |
 | `tkinter is missing` | Re-run the Python installer → *Modify* → tick **tcl/tk and IDLE**. |
 | Setup fails while downloading | Usually no internet or a workplace proxy. On a university network, try again off the VPN. |
@@ -98,6 +106,24 @@ To check the environment at any time:
 ```bat
 .venv\Scripts\python.exe tools\check_install.py
 ```
+
+Add `--report` to list every installed version — that plus `setup_log.txt` is
+what to send if you need help:
+
+```bat
+.venv\Scripts\python.exe tools\check_install.py --report
+```
+
+### If a package will not install
+
+1. **Move the project out of OneDrive** and run `setup.bat` again. This fixes
+   it most of the time.
+2. Delete the `.venv` folder and re-run `setup.bat` — a partial environment
+   never repairs itself fully.
+3. On a university network, try off the VPN: some proxies block `pypi.org`.
+4. If antivirus is the problem, the log shows a permission or "file in use"
+   error. Add the project folder to its exclusions, or install from a local
+   account folder.
 
 To update after new code is pulled:
 
