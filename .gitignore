@@ -1,0 +1,28 @@
+# Environments
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Data and results: these are large and machine-specific.
+# Remove the next lines if you want to version the sample images.
+images/
+output/
+*.nd2
+settings.json

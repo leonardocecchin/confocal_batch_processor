@@ -1,0 +1,15 @@
+# Core scientific stack
+numpy>=1.24
+scipy>=1.10
+scikit-image>=0.22
+pandas>=1.5
+matplotlib>=3.6
+
+# Microscopy I/O
+nd2>=0.10          # Nikon .nd2 reader (Bio-Formats-free)
+tifffile>=2023.1   # OME-TIFF reading/writing
+imagecodecs        # compressed TIFF support
+
+# GUI uses tkinter from the standard library (Debian/Ubuntu: apt install python3-tk)
+edt              # fast float32 anisotropic distance transform (optional but recommended;
+                 # falls back to scipy, which needs ~5x more memory)
