@@ -46,6 +46,11 @@ DISPLAY_TRANSFORMS = ("linear", "gamma", "log")
 # Threshold used to decide which voxels count as signal for the statistics.
 THRESHOLD_METHODS = ("otsu", "triangle", "li", "yen", "mean", "percentile", "manual")
 
+# Per-channel measurement thresholds additionally offer "display_min": count as
+# signal whatever lies above the lower saturation limit of the display window,
+# so the measurement follows exactly what the picture shows.
+CHANNEL_THRESHOLD_METHODS = THRESHOLD_METHODS + ("display_min",)
+
 # Whether an automatic threshold is decided per image or once for the folder.
 # "batch" is what makes totals comparable between images: an automatic method
 # run per image moves the signal/background cut-off from image to image (on the
@@ -124,7 +129,7 @@ class ChannelSettings:
             problems.append(f"{tag}: unknown limit mode {self.limit_mode!r}")
         if self.display_transform not in DISPLAY_TRANSFORMS:
             problems.append(f"{tag}: unknown display transform {self.display_transform!r}")
-        if self.threshold_method not in THRESHOLD_METHODS:
+        if self.threshold_method not in CHANNEL_THRESHOLD_METHODS:
             problems.append(f"{tag}: unknown threshold method {self.threshold_method!r}")
         if self.threshold_scope not in THRESHOLD_SCOPES:
             problems.append(f"{tag}: unknown threshold scope {self.threshold_scope!r}")

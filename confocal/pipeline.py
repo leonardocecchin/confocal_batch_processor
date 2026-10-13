@@ -206,7 +206,7 @@ def calibrate_batch(
         for i, c in enumerate(settings.channels)
         if c.measures_anything
         and c.threshold_scope == "batch"
-        and c.threshold_method not in ("manual",)
+        and c.threshold_method not in ("manual", "display_min")
     ]
     if not needs_limits and not needs_threshold:
         return calibration
@@ -573,7 +573,11 @@ def process_image(
                     info.pixel_area_um2,
                     info.voxel_volume_um3,
                     n_cells,
-                    threshold_override=calibration.thresholds.get(index),
+                    threshold_override=(
+                        vmin
+                        if channel.threshold_method == "display_min"
+                        else calibration.thresholds.get(index)
+                    ),
                 )
                 if channel.measures_anything:
                     row.update(metrics.as_columns())

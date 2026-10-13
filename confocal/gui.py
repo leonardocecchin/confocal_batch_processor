@@ -24,6 +24,7 @@ from .config import (
     DISPLAY_TRANSFORMS,
     LIMIT_MODES,
     PROJECTIONS,
+    CHANNEL_THRESHOLD_METHODS,
     THRESHOLD_METHODS,
     THRESHOLD_SCOPES,
     ChannelSettings,
@@ -136,7 +137,7 @@ class ChannelPanel:
         )
 
         # --- saturation ------------------------------------------------------
-        sat = ttk.LabelFrame(body, text="Saturation limits")
+        sat = ttk.LabelFrame(body, text="DISPLAY: saturation limits  (images only)")
         sat.grid(row=1, column=0, sticky="nsew", padx=(0, PAD))
         ttk.Label(sat, text="Mode").grid(row=0, column=0, sticky="e", padx=(4, 4), pady=2)
         mode_box = ttk.Combobox(
@@ -166,8 +167,11 @@ class ChannelPanel:
             spin.grid(row=r, column=1, sticky="w", pady=2)
             self.pct_widgets += [lbl, spin]
 
+        self.sat_hint = ttk.Label(sat, wraplength=210, justify="left", foreground="#555555")
+        self.sat_hint.grid(row=5, column=0, columnspan=2, sticky="w", padx=4, pady=(4, 2))
+
         # --- display ----------------------------------------------------------
-        disp = ttk.LabelFrame(body, text="Display scaling")
+        disp = ttk.LabelFrame(body, text="DISPLAY: scaling  (images only)")
         disp.grid(row=1, column=1, sticky="nsew", padx=(0, PAD))
         ttk.Label(disp, text="Curve").grid(row=0, column=0, sticky="e", padx=(4, 4), pady=2)
         ttk.Combobox(
@@ -187,7 +191,7 @@ class ChannelPanel:
         ).grid(row=3, column=1, sticky="w")
 
         # --- measurements -------------------------------------------------------
-        meas = ttk.LabelFrame(body, text="Measure (total and per cell)")
+        meas = ttk.LabelFrame(body, text="MEASURE: numbers  (never changes the images)")
         meas.grid(row=1, column=2, sticky="nsew")
         ttk.Checkbutton(meas, text="area", variable=self.m_area).grid(
             row=0, column=0, sticky="w", padx=4
@@ -199,27 +203,40 @@ class ChannelPanel:
             row=2, column=0, sticky="w", padx=4
         )
         ttk.Label(meas, text="Threshold").grid(row=0, column=1, sticky="e", padx=(10, 4))
-        ttk.Combobox(
-            meas, textvariable=self.threshold_method, values=list(THRESHOLD_METHODS),
-            width=11, state="readonly",
-        ).grid(row=0, column=2, sticky="w")
-        ttk.Label(meas, text="value").grid(row=1, column=1, sticky="e", padx=(10, 4))
-        ttk.Spinbox(
+        thr_box = ttk.Combobox(
+            meas, textvariable=self.threshold_method,
+            values=list(CHANNEL_THRESHOLD_METHODS), width=11, state="readonly",
+        )
+        thr_box.grid(row=0, column=2, sticky="w")
+        thr_box.bind("<<ComboboxSelected>>", lambda e: self._sync_limit_state())
+        self.thr_value_lbl = ttk.Label(meas, text="manual value")
+        self.thr_value_lbl.grid(row=1, column=1, sticky="e", padx=(10, 4))
+        self.thr_value_spin = ttk.Spinbox(
             meas, textvariable=self.threshold_value, from_=0, to=65535, width=9
-        ).grid(row=1, column=2, sticky="w")
-        ttk.Label(meas, text="%ile").grid(row=2, column=1, sticky="e", padx=(10, 4))
-        ttk.Spinbox(
+        )
+        self.thr_value_spin.grid(row=1, column=2, sticky="w")
+        self.thr_pct_lbl = ttk.Label(meas, text="percentile")
+        self.thr_pct_lbl.grid(row=2, column=1, sticky="e", padx=(10, 4))
+        self.thr_pct_spin = ttk.Spinbox(
             meas, textvariable=self.threshold_pct, from_=0, to=100, increment=0.5, width=9
-        ).grid(row=2, column=2, sticky="w")
-        ttk.Label(meas, text="scope").grid(row=3, column=1, sticky="e", padx=(10, 4))
-        ttk.Combobox(
+        )
+        self.thr_pct_spin.grid(row=2, column=2, sticky="w")
+        self.thr_scope_lbl = ttk.Label(meas, text="scope")
+        self.thr_scope_lbl.grid(row=3, column=1, sticky="e", padx=(10, 4))
+        self.thr_scope_box = ttk.Combobox(
             meas, textvariable=self.threshold_scope, values=list(THRESHOLD_SCOPES),
             width=9, state="readonly",
-        ).grid(row=3, column=2, sticky="w")
+        )
+        self.thr_scope_box.grid(row=3, column=2, sticky="w")
+        self.thr_hint = ttk.Label(meas, wraplength=300, justify="left", foreground="#555555")
+        self.thr_hint.grid(row=4, column=0, columnspan=3, sticky="w", padx=4, pady=(4, 2))
 
         body.columnconfigure(0, weight=1)
         body.columnconfigure(1, weight=1)
         body.columnconfigure(2, weight=1)
+        # Explanations and enabled/disabled fields follow every relevant choice.
+        for var in (self.limit_mode, self.threshold_method, self.vmin):
+            var.trace_add("write", lambda *_: self._sync_limit_state())
         self._sync_limit_state()
 
     def _paint_swatch(self):
@@ -236,6 +253,44 @@ class ChannelPanel:
             widget.configure(state="normal" if mode == "manual" else "disabled")
         for widget in self.pct_widgets:
             widget.configure(state="disabled" if mode == "manual" else "normal")
+        self.sat_hint.configure(text={
+            "manual": "Uses the Min / Max typed here.",
+            "auto_percentile": "Min / Max found from the percentiles of each image "
+                               "(typed Min / Max are ignored).",
+            "auto_percentile_batch": "Min / Max found from the percentiles pooled over the "
+                                     "folder, one window for all images.",
+            "roi_reference": "Min / Max taken from the reference ROI (Output tab) and "
+                             "shared by all images.",
+        }.get(mode, ""))
+
+        method = self.threshold_method.get()
+        manual = method == "manual"
+        for widget in (self.thr_value_lbl, self.thr_value_spin):
+            widget.configure(state="normal" if manual else "disabled")
+        pct = method == "percentile"
+        for widget in (self.thr_pct_lbl, self.thr_pct_spin):
+            widget.configure(state="normal" if pct else "disabled")
+        fixed = method in ("manual", "display_min")
+        self.thr_scope_lbl.configure(state="disabled" if fixed else "normal")
+        self.thr_scope_box.configure(state="disabled" if fixed else "readonly")
+        if method == "manual":
+            hint = ("Signal = intensity above the manual value, in raw intensity units "
+                    "(after background subtraction). Independent of the saturation limits.")
+        elif method == "display_min":
+            hint = {
+                "manual": "Signal = intensity above the display Min typed on the left "
+                          f"({self.vmin.get():g}).",
+                "auto_percentile": "Signal = intensity above the display Min, which is "
+                                   "found per image, so the cut-off moves between images.",
+            }.get(mode, "Signal = intensity above the display Min, which is shared by all "
+                        "images in this mode.")
+        elif method == "percentile":
+            hint = ("Signal = intensity above this percentile of the data; the saturation "
+                    "limits have no effect on it.")
+        else:
+            hint = ("Cut-off found automatically from the data; the saturation limits "
+                    "have no effect on it.")
+        self.thr_hint.configure(text=hint)
 
     def to_settings(self) -> ChannelSettings:
         return ChannelSettings(
