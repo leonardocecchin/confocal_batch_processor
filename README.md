@@ -58,8 +58,12 @@ non-isolating environment whose `pip install` silently writes to `~/.local`.
 ## Run
 
 ```bash
-.venv/bin/python run_gui.py         # Windows: run_gui.bat
+./run_gui.sh                        # Windows: run_gui.bat
 ```
+
+On Ubuntu, run `./install_launcher.sh` once to get a **Confocal Processor** entry
+in the app menu and a double-clickable `Confocal Processor.desktop` in the project
+folder (right-click → **Allow Launching** if asked).
 
 Headless, reusing a settings file saved by the GUI:
 
