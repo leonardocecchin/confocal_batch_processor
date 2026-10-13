@@ -11,8 +11,7 @@ if __name__ == "__main__":
     # re-running this file; without this the pool would spawn GUIs instead.
     multiprocessing.freeze_support()
 
-    # CI smoke test for the frozen build: import everything, then exit
-    # without opening a window.
+    # Import check for CI, no window.
     import sys
 
     if "--selftest" in sys.argv:

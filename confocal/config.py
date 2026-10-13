@@ -46,9 +46,7 @@ DISPLAY_TRANSFORMS = ("linear", "gamma", "log")
 # Threshold used to decide which voxels count as signal for the statistics.
 THRESHOLD_METHODS = ("otsu", "triangle", "li", "yen", "mean", "percentile", "manual")
 
-# Per-channel measurement thresholds additionally offer "display_min": count as
-# signal whatever lies above the lower saturation limit of the display window,
-# so the measurement follows exactly what the picture shows.
+# Per-channel only: "display_min" thresholds at the display's lower limit.
 CHANNEL_THRESHOLD_METHODS = THRESHOLD_METHODS + ("display_min",)
 
 # Whether an automatic threshold is decided per image or once for the folder.

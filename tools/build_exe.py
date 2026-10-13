@@ -1,13 +1,8 @@
 #!/usr/bin/env python3
 """Build the standalone ConfocalProcessor folder with PyInstaller.
 
-Used by build_windows_exe.bat and by the GitHub Actions workflow, so the flags
-live in one place. PyInstaller does not cross-compile: run it on the OS you
-are targeting.
-
-scikit-image, scipy and nd2 resolve plugins at run time, so PyInstaller's
-import scanner cannot see them; they are named explicitly. If the exe starts
-and then dies with ModuleNotFoundError, add the module the same way.
+Shared by build_windows_exe.bat and CI. Does not cross-compile. Modules loaded
+at run time are named explicitly; add any that raise ModuleNotFoundError.
 """
 
 import pathlib

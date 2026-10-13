@@ -3,65 +3,46 @@
 *by Klaudia Saladauskas and Leonardo Cecchin*
 
 Batch processing for confocal z-stacks: composites with per-channel colours and
-saturation limits, nucleus counting in 3D, per-channel statistics, and optional
-3D views of the chip. It replaces `reference_fiji_macros/merge.ijm` and adds the
+saturation limits, 3D nucleus counting, per-channel statistics, plots and
+optional 3D views. It replaces `reference_fiji_macros/merge.ijm` and adds the
 quantification the macro did not do.
 
-Reads Nikon `.nd2` and ImageJ/OME `.tif` stacks directly — no Fiji, no
-Bio-Formats, no Java.
-
----
-
-> **On Windows?** The easiest route needs no Python at all: use the pre-built
-> app described under [Windows: pre-built app](#windows-pre-built-app-no-python-needed).
-> To run from source instead, follow [WINDOWS.md](WINDOWS.md) — it covers
-> installing Python and Git from scratch, then `setup.bat` and `run_gui.bat`.
-
-## Windows: pre-built app (no Python needed)
-
-1. On the repository page, click **Releases** (right-hand side) and download
-   **`ConfocalProcessor-windows.zip`** from the newest release. No GitHub
-   account is needed.
-2. Right-click the zip → **Extract All** into a short, local folder such as
-   `C:\Users\<you>\ConfocalProcessor`. Avoid OneDrive and network drives, and
-   do not run the exe from inside the zip.
-3. Open the extracted `ConfocalProcessor` folder and double-click
-   **`ConfocalProcessor.exe`**. Keep the whole folder together, because the exe
-   needs the files next to it. Make a Desktop shortcut to the exe if you like.
-
-**Collaborators with a GitHub login** can also take a build straight from the
-**Actions** tab → **Build Windows app** → a green run → *Artifacts* →
-`ConfocalProcessor-windows` (a zip containing `ConfocalProcessor-windows.zip`).
-Anonymous visitors cannot download artifacts, and they expire after 90 days, so
-use Releases for anything you hand to other people.
-
-**Maintainers: publishing a release.** Pushing a version tag builds the app and
-attaches the zip to a release automatically:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Notes:
-- Windows SmartScreen may say "Windows protected your PC" because the app is
-  not code-signed. Click **More info → Run anyway**.
-- The first start takes several seconds while antivirus scans the files.
-- To update, delete the old folder and repeat the steps with the newer build.
+Reads Nikon `.nd2` and ImageJ/OME `.tif` stacks directly: no Fiji, Bio-Formats
+or Java.
 
 ## Install
 
-Linux and macOS:
+### Windows: pre-built app (no Python needed)
+
+1. On the repository page open **Releases** and download
+   `ConfocalProcessor-windows.zip` from the newest release (no GitHub account
+   needed).
+2. Right-click the zip → **Extract All** into a short local folder such as
+   `C:\Users\<you>\ConfocalProcessor` (not OneDrive or a network drive).
+3. Double-click `ConfocalProcessor.exe`. Keep the folder together.
+
+Windows SmartScreen may warn because the app is not code-signed: **More info →
+Run anyway**. To update, delete the folder and repeat with the newer release.
+
+Collaborators with a GitHub login can also download the build from **Actions →
+Build Windows app → a green run → Artifacts**. Artifacts need a login and expire
+after 90 days, so hand out Releases.
+
+Maintainers publish a release by pushing a tag, which builds the app and
+attaches the zip:
 
 ```bash
-./setup.sh
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Windows: double-click `setup.bat`, then `run_gui.bat`. See
-[WINDOWS.md](WINDOWS.md).
+### From source
 
-That creates an isolated `.venv/` and installs everything into it. To do it by
-hand:
+| OS | Steps |
+|---|---|
+| Linux / macOS | `./setup.sh`, then `sudo apt install python3-tk` on Debian/Ubuntu |
+| Windows | Install Python and Git, double-click `setup.bat`; see [WINDOWS.md](WINDOWS.md) |
+
+This creates an isolated `.venv/`; nothing is installed outside it. By hand:
 
 ```bash
 python3 -m venv --without-pip .venv
@@ -70,32 +51,17 @@ curl -sS -o /tmp/get-pip.py https://bootstrap.pypa.io/get-pip.py
 .venv/bin/pip install -r requirements.txt
 ```
 
-The GUI needs Tk, which on Debian/Ubuntu is a separate package:
-
-```bash
-sudo apt install python3-tk
-```
-
-> **Why `--without-pip` on this machine.** `python3 -m venv` on its own fails
-> here because `python3-venv` is not installed, and the system `virtualenv`
-> silently produces a *non-isolating* environment: it lays the interpreter out
-> under `.venv/local/bin`, and pip then resolves against `~/.local`, so
-> `pip install` reports success while quietly installing into your user
-> site-packages and upgrading things other projects pin. Creating the venv
-> without pip and bootstrapping pip into it avoids both problems. Installing
-> `python3-venv` (`sudo apt install python3-venv`) makes the plain
-> `python3 -m venv .venv` work too.
-
-Nothing is installed outside `.venv/`, so your `~/.local` packages — and the
-versions `awebox` and friends pin — are left alone.
+`--without-pip` avoids two traps: `python3 -m venv` fails without the
+`python3-venv` package, and the system `virtualenv` can produce a
+non-isolating environment whose `pip install` silently writes to `~/.local`.
 
 ## Run
 
 ```bash
-.venv/bin/python run_gui.py
+.venv/bin/python run_gui.py         # Windows: run_gui.bat
 ```
 
-Or headless, reusing a settings file the GUI saved:
+Headless, reusing a settings file saved by the GUI:
 
 ```bash
 .venv/bin/python -m confocal.cli probe    ./images/raw
@@ -106,312 +72,183 @@ Or headless, reusing a settings file the GUI saved:
 `run` accepts `--input`, `--output`, `--limit N` and `--workers N` to override
 the file.
 
----
+## The GUI
 
-## The GUI, tab by tab
+1. **Folders**: input and output folders, which images to process (none selected
+   = all). *Inspect first* fills in the channel count and calibration.
+2. **Channels**: analysis region, then per channel the name, colour, display
+   settings and measurements. *Preview composite* renders one image.
+3. **Cell counting**: the 3D watershed, the annotated counting image, and two
+   tuning tools that run on a crop.
+4. **Output**: which images, 3D views and tables to write, and the scale bar.
+5. **Run**: progress and live log. Load/save settings from the *File* menu.
+6. **Plots**: charts of the statistics CSV, from this run or an earlier one.
 
-**1. Folders** — input folder, output folder, and which images to process
-(selecting none means all). *Inspect first* reads the first file and fills in
-the channel count and calibration.
+## Display versus measurement
 
-**2. Channels** — the analysis region, then per channel: name, colour,
-saturation limits, display curve, background subtraction, and which
-measurements to compute. *Preview composite* renders one image with the current
-settings before you commit to a batch.
+Each channel panel has two kinds of settings, labelled in the GUI:
 
-**3. Cell counting** — the 3D watershed and its parameters, the annotated
-counting image, plus two tuning tools that run on a crop of one image and draw
-the resulting outlines.
+- **DISPLAY** (saturation limits, curve, gamma): affect the images only.
+- **MEASURE** (threshold, area/volume/intensity): affect the numbers only.
 
-**4. Output** — which images, 3D views and tables to write, and the scale bar.
+Display scaling is applied after every statistic is computed, and
+`tests/test_pipeline.py` checks that changing it leaves all measurements
+bit-identical.
 
-**5. Run** — progress and a live log. Settings load/save live in the *File* menu.
+A measurement counts a voxel as signal when it is above the channel's
+**threshold**:
 
-**6. Plots** — charts of the statistics CSV, from this run or any earlier one.
+| Method | Cut-off |
+|---|---|
+| `otsu`, `triangle`, `li`, `yen`, `mean` | Found automatically from the data |
+| `percentile` | The given percentile of the data |
+| `manual` | The value you type, in raw (background-subtracted) intensity |
+| `display_min` | The lower saturation limit of the display, so the numbers follow the picture |
 
----
+The GUI greys out fields that the current choice does not use and prints a hint
+under each frame stating what is applied.
 
-## The analysis region
+**Threshold scope** (automatic methods only):
 
-By default every measurement uses the whole field. Tick **measure only inside a
-region** on the *Channels* tab and drag a rectangle on a preview, and from then
-on:
+- `batch` (default): one cut-off computed from pixels pooled over the folder and
+  applied to every image, so totals are comparable.
+- `per_image`: each image thresholded on its own. On the EXP17 set per-image
+  Otsu varies 8-15-fold between images; use this only when images are not meant
+  to be compared.
 
-- **counting, area, volume and intensity use that rectangle only**, the same
-  one for every image in the folder — including the batch threshold, which is
-  calibrated on the same pixels it will be applied to;
-- **the exported images are unchanged** — composites, single channels and 3D
-  views are always the full field;
-- the overlay marks the region with a dashed rectangle, so a figure shows what
-  was measured rather than hiding it in a settings file.
-
-The rectangle is stored as fractions of the image size, so it keeps working
-across acquisitions with different pixel dimensions.
-
-Two extra columns record it per image: `analysis_region` (the pixel bounds, or
-`whole image`) and `analysis_area_um2` / `analysis_volume_um3`. The
-`*_fraction_fov` columns are fractions *of the analysed region*, so they stay
-meaningful either way.
-
-This is the clean way to leave out the pillar rows, an out-of-focus margin or a
-torn edge without cropping the figures. On the EXP17 set, restricting to the
-central 28 % of the field took the count from 448 to 132 — 29 %, as it should.
+The shared threshold and shared display window are computed in one pass before
+the run, on an evenly spaced sample (*Calibration sample*, default 8 images; 0 =
+all). The values used are logged and written per image to `statistics.csv`.
 
 ## Saturation limits
 
-Each channel picks one of three modes:
-
-| Mode | What it does | Use when |
+| Mode | Min/max from | Use when |
 |---|---|---|
-| `manual` | Fixed min/max, exactly like the macro's `setMinAndMax`. | You already know the right window. |
-| `auto_percentile` | Min/max from percentiles of **each image on its own**. | Making every image individually legible. |
-| `auto_percentile_batch` | Min/max from percentiles **pooled over the folder** — one window for every image. | Comparing images by eye. |
-| `roi_reference` | Min/max from percentiles inside a rectangle you drag on a preview. | Images differ a lot and you want one honest reference region. |
+| `manual` | The values you type (like the macro's `setMinAndMax`) | You know the window |
+| `auto_percentile` | Percentiles of each image on its own | Making each image legible |
+| `auto_percentile_batch` | Percentiles pooled over the folder, one window for all | Comparing images by eye |
+| `roi_reference` | Percentiles inside a rectangle dragged on a preview | One honest reference region |
 
-`roi_reference` has two scopes:
+`roi_reference` is either **global** (measured once, same window for every
+image, comparable) or **per_image** (re-measured on each image, legible but not
+comparable).
 
-- **global** — the rectangle is measured once and every image gets the *same*
-  window, so brightness stays comparable across the batch. This is what you
-  want when comparing conditions.
-- **per_image** — the same rectangle is re-measured on each image, normalising
-  away differences in staining or laser power. Use it to make every image
-  legible, not to compare them.
+**Curve.** `linear` is faithful but hides dim structures next to bright ones.
+`gamma` (0.5) lifts the dim end and is the usual choice for figures. `log`
+compresses hardest but makes noise look like signal; use it to see, not to judge
+brightness. A well-chosen `roi_reference` window usually helps more than the
+curve. The limits used are recorded per image (`<channel>_display_min` /
+`_display_max`).
 
-### Do the saturation limits affect the measurements?
+## The analysis region
 
-**No — and this is enforced, not just intended.** Display scaling is applied
-*after* every statistic has been computed, so the measurements come from the
-raw (optionally background-subtracted) intensities and nothing in the display
-path can reach them.
+Tick **measure only inside a region** on the *Channels* tab and drag a rectangle
+on a preview. Then:
 
-Checked on a real image by running it with display windows differing 600-fold
-(`0–100`, `0–60000`, auto, and a log curve): every total area, volume and
-intensity came back bit-identical. `tests/test_pipeline.py` asserts this, so it
-cannot regress silently.
+- counting, area, volume and intensity use that rectangle only, the same for
+  every image, including the batch threshold calibration;
+- exported composites, single channels and 3D views stay full-field;
+- the overlay draws the region as a dashed rectangle.
 
-### What *does* break comparability: the threshold
-
-The number that decides which voxels count as signal is the **threshold**, not
-the display window — and an automatic threshold run per image moves from image
-to image. On the EXP17 set, per-image Otsu spans a factor of 8 on DAPI and
-nearly 15 on Vimentin, so the same structure would measure differently
-depending on which picture it was in.
-
-Every channel therefore has a **threshold scope**:
-
-- **`batch` (default)** — the threshold is computed once, from pixels pooled
-  across the folder, and the *same* cut-off is applied to every image. This is
-  what makes totals comparable between images and conditions.
-- **`per_image`** — the old behaviour, each image thresholded on its own. Use
-  it only when images are genuinely not meant to be compared.
-
-Both the shared threshold and the shared display window are computed in one
-pass before the run, over an evenly spaced sample of the folder (*Calibration
-sample*, default 8 images; 0 means all). Percentiles and Otsu are stable well
-before eight images, and each sampled image costs a read. The values actually
-used are printed in the log and recorded per image in `statistics.csv`, so you
-can always see what cut-off produced a number.
-
-> Note: this default changed the numbers relative to a per-image run. Totals
-> measured with `batch` scope are the comparable ones; if you have earlier
-> results from this tool, re-run them before comparing against new output.
-
-### Should you use a log intensity scale?
-
-You asked whether a log scale makes sense for signals of very different
-strength. Short answer: **gamma, usually; log, occasionally; and never for the
-numbers.**
-
-All three curves are available per channel and all three are *display only* —
-the statistics are always computed on the raw (optionally
-background-subtracted) intensities, so changing the display never changes a
-number in `statistics.csv`.
-
-- **linear** — what Fiji does. Faithful, but dim structures disappear when one
-  channel is much brighter than another.
-- **gamma** (default 0.5 when selected) — lifts the dim end while keeping the
-  ordering and rough proportionality of intensities. This is the conventional
-  choice for microscopy figures and is what I would reach for first.
-- **log** — compresses hardest, so signal spanning orders of magnitude fits in
-  one image. It also makes background noise look like real signal and destroys
-  any visual sense of proportion, so use it to *see* something, never to let a
-  reader judge relative brightness by eye.
-
-In practice, the bigger win for wildly varying images is a well-chosen
-`roi_reference` window; the curve is a second-order adjustment on top of it.
-Whichever you pick, the display limits actually used are recorded per image in
-`statistics.csv` (`<channel>_display_min` / `_display_max`), so figures stay
-reproducible.
-
----
+It is stored as fractions of the image, so it works across acquisitions of
+different sizes. `analysis_region`, `analysis_area_um2` and
+`analysis_volume_um3` are recorded per image, and `*_fraction_fov` columns are
+fractions of the analysed region. Use it to leave out pillar rows or a torn edge.
 
 ## Cell counting
 
-Counting runs on the **full z-stack**, not the projection. Two nuclei stacked on
-top of each other are a single blob in a max projection but two clearly separate
-objects in the volume, and separating them is the whole reason to work in 3D.
-(`tests/test_pipeline.py` asserts exactly this on a synthetic pair.)
+Counting runs on the full z-stack, so two nuclei stacked in z are separated
+rather than merged as in a projection.
 
-The pipeline:
+1. Anisotropic Gaussian smoothing (sigmas in µm, using the real voxel size).
+2. Threshold (Otsu by default).
+3. Fill holes per slice, drop objects below the minimum volume.
+4. 3D Euclidean distance transform in µm.
+5. Smooth the distance map and find local maxima as seeds.
+6. 3D watershed, then discard objects outside the volume range.
 
-1. Anisotropic Gaussian smoothing — sigmas are given in microns and converted
-   using the real voxel size, which matters because these stacks are 0.72 µm in
-   XY against 2.5 µm in Z.
-2. Threshold (Otsu by default; Triangle / Li / Yen / mean / percentile / manual
-   also available).
-3. Fill holes slice by slice, drop objects below the minimum volume.
-4. 3D Euclidean distance transform, computed in microns.
-5. Smooth the distance map, find local maxima — these are the seeds.
-6. Watershed in 3D, then discard objects outside the volume range.
+**`seed smoothing` is the parameter that matters.** A ragged boundary gives
+several maxima per nucleus and the watershed cuts it into pieces. Counts on one
+EXP17 image:
 
-### Tuning: `seed smoothing` is the parameter that matters
-
-A ragged nucleus boundary produces several local maxima inside one nucleus, and
-the watershed then cuts that nucleus into pieces. Smoothing the distance map
-before seed-finding merges those spurious maxima. The setting is expressed as a
-fraction of the nucleus radius.
-
-On the EXP17 images the effect is dramatic and easy to see:
-
-| seed smoothing | nuclei counted (one image) |
+| seed smoothing | nuclei |
 |---|---|
-| 0.0 | 2854 — almost every nucleus split in two |
+| 0.0 | 2854 (nearly every nucleus split) |
 | 0.15 | 1095 |
 | **0.25 (default)** | **1059** |
 | 0.5 | 929 |
 
-The value sits on a plateau between 0.15 and 0.5, which is why 0.25 is the
-default: the answer is insensitive to the exact choice, and only turning the
-smoothing off entirely breaks it.
+The result is stable between 0.15 and 0.5. Use **Preview cell counting** and
+**Compare seed smoothing** (0.0 / 0.15 / 0.25 / 0.5 side by side): outlines
+cutting a nucleus in half mean too low; merged nuclei mean too high.
 
-Use the two buttons on the *Cell counting* tab rather than guessing:
+Other parameters:
 
-- **Preview cell counting** — outlines on a crop, with the count.
-- **Compare seed smoothing** — the same crop at 0.0 / 0.15 / 0.25 / 0.5 side by
-  side. Outlines cutting single nuclei in half mean the value is too low;
-  nuclei merged into one outline mean it is too high.
+- `nucleus radius`: minimum separation between seeds.
+- `min / max volume`: discards debris and merged clumps (µm³).
+- `drop nuclei touching the XY border`: off by default; Z borders are never used.
+- `XY downsample`: 2 roughly quarters time and memory at some cost on small nuclei.
 
-Other parameters worth knowing:
+### Annotated counting image
 
-- `nucleus radius` — sets the minimum separation between two seeds.
-- `min / max volume` — discards debris and merged clumps (µm³).
-- `drop nuclei touching the XY border` — off by default. The Z borders are never
-  used for this, since a cell at the top or bottom of the stack is a real cell
-  that happens to extend past the acquired depth.
-- `XY downsample` — 2 roughly quarters the time and memory at some loss of
-  precision on small nuclei.
-
----
-
-### The annotated counting image
-
-Every run can export the picture the count came from, so a number in a table is
-always checkable against the image behind it:
-
-- **nucleus outlines** over the nuclei channel, one per counted cell, taken
-  from the 3D labels — so a nucleus hidden under another in the projection
-  still gets its own outline;
-- **the total** (`n = 448 cells`) burned into the corner;
-- optionally **a number on every cell**, matching the `cell_id` column of
-  `cells_per_object.csv`. Pick a cell out of the picture, look up its row, and
-  you have its volume, centroid and equivalent diameter.
-
-Each number sits just *above* its own outline rather than on top of it: three
-digits are wider than a small nucleus, and centring them would hide the very
-boundary being labelled. The digits are sized from the median nucleus by
-default (override with *font pt*) and carry a dark halo so they stay readable
-over bright signal.
-
-Numbering ~450 cells on a 1360x1360 field is legible but dense. Save the
-overlay as **tif** as well as png (both are offered) and zoom in Fiji when you
-need to read individual ids; the tif carries the pixel calibration.
-
-Files land in `segmentation/<image>_nuclei_overlay.png`, alongside
-`<image>_nuclei_labels.tif` — the raw 3D label image, if you would rather do
-your own overlay.
+Each run can export the picture the count came from: nucleus outlines from the
+3D labels, the total (`n = 448 cells`), and optionally a number above each cell
+matching `cell_id` in `cells_per_object.csv`. Digits are sized from the median
+nucleus (override with *font pt*). For dense fields save the overlay as **tif**
+too and zoom in Fiji. Files go to `segmentation/` as `<image>_nuclei_overlay.png`
+and `<image>_nuclei_labels.tif` (the raw 3D labels).
 
 ## What gets measured
 
-For every channel you can tick **area**, **volume** and **intensity**. Each
-produces a total and a per-cell value, where per-cell divides by the counted
-nuclei — the "relative" figure.
+Tick **area**, **volume** and **intensity** per channel. Each gives a total and a
+per-cell value (divided by the counted nuclei).
 
 | Column | Meaning |
 |---|---|
-| `<ch>_total_area_um2` | Area of signal-positive pixels in the projection (µm²) |
-| `<ch>_relative_area_um2_per_cell` | …divided by the cell count |
-| `<ch>_area_fraction_fov` | …as a fraction of the field of view |
-| `<ch>_total_volume_um3` | Volume of signal-positive voxels in the stack (µm³) |
-| `<ch>_relative_volume_um3_per_cell` | …divided by the cell count |
-| `<ch>_volume_fraction_fov` | …as a fraction of the imaged volume |
-| `<ch>_total_intensity` | Summed intensity over signal-positive voxels |
-| `<ch>_relative_intensity_per_cell` | …divided by the cell count |
+| `<ch>_total_area_um2` | Area of signal pixels in the projection |
+| `<ch>_relative_area_um2_per_cell` | …per cell |
+| `<ch>_area_fraction_fov` | …as a fraction of the field |
+| `<ch>_total_volume_um3` | Volume of signal voxels |
+| `<ch>_relative_volume_um3_per_cell` | …per cell |
+| `<ch>_volume_fraction_fov` | …as a fraction of the volume |
+| `<ch>_total_intensity` | Summed intensity over signal voxels |
+| `<ch>_relative_intensity_per_cell` | …per cell |
 | `<ch>_mean_intensity_in_signal` | Mean intensity where there is signal |
-| `<ch>_threshold` | The threshold actually used (identical across images in `batch` scope) |
-| `<ch>_display_min` / `_display_max` | The saturation window actually used |
+| `<ch>_threshold` | Threshold actually used |
+| `<ch>_display_min` / `_display_max` | Saturation window actually used |
 
 Plus `n_cells`, `nuclei_threshold`, `mean_nucleus_volume_um3` and the
-calibration for each image. "Signal-positive" is decided by that channel's own
-threshold method, so pick it deliberately — it is the single most consequential
-choice for the area and volume numbers.
-
-Enable **cells_per_object.csv** for one row per nucleus (volume, centroid,
-equivalent diameter) if you want distributions rather than per-image totals.
-
----
+calibration. The threshold method is the most consequential choice for area and
+volume. Enable `cells_per_object.csv` for one row per nucleus (volume, centroid,
+equivalent diameter).
 
 ## Plots
 
-The **Plots** tab draws the statistics CSV — the one just written, or any from
-an earlier session via *Browse*. `cells_per_object.csv` works too and switches
-to a distribution automatically.
+The **Plots** tab draws the statistics CSV (this run's or any earlier one via
+*Browse*); `cells_per_object.csv` switches to a distribution automatically.
 
-| Plot | What it shows |
+| Plot | Shows |
 |---|---|
-| **boxplot** | Median and quartiles per group, with every image drawn on top as a dot. The default, and the one to use for conditions. |
-| **compare groups** | The same split without the box — dots and the group mean. |
-| **bar per image** | One bar per image, sorted — spot outliers and rank images. |
-| **scatter** | Two measurements against each other, one point per image. |
-| **distribution** | Histogram with the median marked — made for per-nucleus data. |
+| boxplot | Median and quartiles per group, every image as a dot (default) |
+| compare groups | Dots and group mean |
+| bar per image | One sorted bar per image, to spot outliers |
+| scatter | Two measurements against each other |
+| distribution | Histogram with median, for per-nucleus data |
 
-The boxplot always draws the individual images over the box. A box built from
-four chambers looks exactly like one built from forty unless the points are
-shown, and at these sample sizes that difference is the whole story.
-
-### Grouping
-
-**Group by** takes a regular expression matched against the image name, and the
-first capture group becomes the group label. `(dynamic|static)` splits the
-EXP17 set by condition; `chip(\d+)` splits it by chip; blank means no pattern.
-
-**Group by hand...** opens a list of the images where you assign groups
-yourself. Hand assignments override the pattern for the images they name, so
-you can pull one leaking chamber into an `excluded` group without renaming
-files, or build groups the filenames do not encode at all. *Fill from pattern*
-seeds the list from the current regex so you only edit the exceptions. The
-assignments are saved with the settings file.
-
-Hovering a point names the image it came from. *Save figure* writes PNG, PDF or
-SVG at 200 dpi, and *Show table* opens the underlying numbers.
-
-The colours are a validated colour-blind-safe set, assigned in fixed order and
-never generated: past the safe series count the smallest groups fold into
-"other" rather than inventing a new hue. Group means are always labelled
-directly and a table view is always available, so nothing depends on telling
-two colours apart.
+**Group by** is a regular expression on the image name whose first capture group
+is the label, e.g. `(dynamic|static)` or `chip(\d+)`. **Group by hand...**
+assigns groups manually and overrides the pattern for the images it names (e.g.
+an `excluded` group); *Fill from pattern* seeds the list. Assignments are saved
+with the settings. Hovering a point names its image; *Save figure* writes PNG,
+PDF or SVG at 200 dpi. Colours are a fixed colour-blind-safe set; beyond it the
+smallest groups fold into "other".
 
 ## 3D views
 
-Both are optional and off by default.
+Both optional and off by default:
 
-- **Isometric slab render** — the stack drawn as a tilted block, back to front
-  with depth shading, so the chip reads as a solid slab. Elevation and azimuth
-  are adjustable.
-- **Orthogonal panel** — XY with the XZ projection below and YZ to the right,
-  all at the same micron scale. Good for checking how thick the construct is and
-  whether cells sit on one plane.
-
----
+- **Isometric slab**: the stack as a tilted, depth-shaded block.
+- **Orthogonal panel**: XY with XZ below and YZ to the right at the same µm scale.
 
 ## Output layout
 
@@ -420,82 +257,41 @@ Both are optional and off by default.
   composites/      Composite_<image>.png / .tif
   channels/<name>/ <image>_<channel>.png
   3d_views/        <image>_isometric.png, <image>_orthogonal.png
-  segmentation/    <image>_nuclei_overlay.png   (outlines + total + cell ids
-                                                + the analysis region)
-                   <image>_nuclei_labels.tif    (3D label image)
+  segmentation/    <image>_nuclei_overlay.png, <image>_nuclei_labels.tif
   statistics.csv       one row per image
   cells_per_object.csv one row per nucleus (optional)
   settings_used.json   the exact settings, reloadable
   processing_log.txt   what ran, how long, what failed
 ```
 
-TIFFs carry the pixel calibration, so they open in Fiji already scaled. The
-label image is a 3D TIFF you can overlay on the original stack.
-
----
+TIFFs carry the pixel calibration, so they open in Fiji already scaled.
 
 ## Performance and memory
 
-Measured on the EXP17 set (18 files, 4 channels, ~55 z-slices, 1360×1360,
-~800 MB each) on an 8-core machine with 15 GB of RAM:
+On the EXP17 set (18 files, 4 channels, ~55 slices, 1360×1360, ~800 MB each; 8
+cores, 15 GB RAM): ~30 s per image, ~9 min total, ~2.6 GB peak per worker.
 
-- **~30 s per image**, 9 minutes for all 18.
-- **~2.6 GB peak per worker**, 6.2 GB total with 2 workers.
+- Channels are read one at a time, slice by slice.
+- The optional `edt` package does the distance transform in float32 (0.8 GB
+  instead of 5.4 GB with SciPy, ~3× faster).
+- Background subtraction is estimated on a shrunken copy (~20× faster, error well
+  under one grey level).
 
-Three things dominate, and each is handled deliberately:
-
-- **Reading.** Channels are read one at a time, slice by slice. Decoding the
-  whole file to keep one channel would cost 840 MB per read.
-- **The distance transform.** SciPy's only works in float64 and peaked at
-  5.4 GB; the optional `edt` package does the same computation in float32 in
-  0.8 GB and about three times faster. Results agree to ~1e-6. If `edt` is not
-  installed the SciPy path still works — it just needs far more memory.
-- **Background subtraction.** A σ≈49 px Gaussian needs a ~200 px kernel and took
-  47 s per channel. The background is smooth by definition, so it is estimated
-  on a shrunken copy and scaled back up: ~20× faster, mean error well under one
-  grey level.
-
-**The worker count is limited by memory, not cores.** It is chosen from measured
-per-image usage and capped against both free and total RAM; on this machine that
-means 2 workers, not 8. Overriding it too high gets workers OOM-killed rather
-than making the run faster — the *Parallel workers* box is there if you move to
-a machine with more RAM.
-
----
+The worker count is limited by memory, not cores (2 on this machine). Setting
+*Parallel workers* too high gets workers OOM-killed.
 
 ## When a run looks stuck
 
-The log updates after every image, so a silent window is the symptom to read.
+- **No output, 0% CPU, started from a terminal**: the process was suspended
+  (usually `Ctrl+Z`). Type `fg` to resume or `kill %1` to end it.
+- **Still working**: a full 18-image run takes ~15 min (calibration pass, then
+  ~30 s per image). The 3D views are slowest; turn them off for quick runs.
+- **After clicking Stop**: images already running finish rather than being
+  killed mid-write (up to about a minute). Workers die with the parent.
+- **Frozen window** (Linux/macOS): `kill -USR1 <pid>` prints every thread's stack
+  to the launching terminal.
 
-- **No output and 0% CPU, started from a terminal.** The process was suspended,
-  almost always by `Ctrl+Z` in the terminal it was launched from. Type `fg` in
-  that terminal to resume it, or `kill %1` to end it. This stops the workers
-  too, which is why nothing moves.
-- **Still working.** A full 18-image run of the EXP17 set takes about 15
-  minutes: a calibration pass over the sample first, then roughly 30 s per
-  image. The 3D views are the slowest part; turn them off for a quick run.
-- **You clicked Stop.** Stop is honoured during the calibration pass as well as
-  during processing, but the images *already running* are allowed to finish
-  rather than being killed mid-write — up to about a minute on this data. The
-  log says so when you click, and the Stop button greys out to show the click
-  registered. Only one spare image is ever queued ahead of the workers, so the
-  wait stays close to one image.
-- **Leftover worker processes.** Workers now die with the parent, so a closed
-  or killed window leaves nothing behind. To check:
-
-  ```bash
-  ps -eo pid,stat,rss,args | grep "[.]venv/bin/python"
-  ```
-
-  Nothing should be listed once the window is gone. A `T` in the STAT column
-  means suspended, not busy.
-
-Closing the window during a run asks first, then stops the workers before
-quitting.
-
-If the window is ever genuinely frozen, `kill -USR1 <pid>` makes it print the
-stack of every thread to the terminal it was started from, which says exactly
-where it is stuck. (Linux and macOS; Windows has no SIGUSR1.)
+Closing the window during a run asks first, then stops the workers.
 
 ## Tests
 
@@ -503,44 +299,29 @@ where it is stuck. (Linux and macOS; Windows has no SIGUSR1.)
 .venv/bin/python -m tests.test_pipeline      # or: pytest tests/
 ```
 
-Runs on small synthetic stacks, so no `.nd2` files are needed. It checks the
-settings round-trip, validation, display curves, scale-bar rounding, that
-background subtraction does not blur along z, that a corrupt file does not kill
-a batch, that planted nuclei are counted exactly, that two nuclei overlapping in
-XY but separated in z are counted as two, **that the display settings cannot
-change a measurement**, that batch scope really does give every image the same
-threshold and display window, that every plot type builds, and that the
-annotated counting image is written in every requested format with its cell
-ids matching `cells_per_object.csv`, that the analysis region restricts the
-measurements while leaving the exports full-field, and that manual groups
-override the group pattern, and that a threshold which calls almost everything
-(or almost nothing) signal is reported rather than passed off as a measurement.
-
----
+Uses small synthetic stacks, so no `.nd2` files are needed. Covers settings
+round-trip and validation, display curves, background subtraction, corrupt
+files, exact nucleus counts (including nuclei overlapping in XY but not z),
+display settings not changing measurements, batch-wide thresholds and windows,
+plots, the annotated counting image, the analysis region, manual groups, and
+warnings for implausible thresholds.
 
 ## Differences from `merge.ijm`
 
-The macro's behaviour is kept where it was deliberate: the same colour-blind
-safe palette and names, black-to-colour gradient LUTs, additive composite,
-max-intensity projection, background subtraction, and the "nice number" scale
-bar at ~10 % of image width.
+Kept from the macro: the colour-blind-safe palette and names, black-to-colour
+LUTs, additive composite, max projection, background subtraction and the
+"nice number" scale bar at ~10 % of image width.
 
-What is new: 3D cell counting, an analysis region that confines the
-measurements without cropping the figures, annotated counting images with
-per-cell ids,
+New: 3D cell counting, analysis region, annotated counting images,
 per-channel quantification, automatic and ROI-based saturation limits,
-batch-wide thresholds so images stay comparable, gamma/log display curves, 3D
-views, plots of the statistics, a settings file you can reload, per-image
-logging, batch parallelism, and direct `.nd2` reading without Bio-Formats.
+batch-wide thresholds, gamma/log curves, 3D views, plots, reloadable settings,
+per-image logging, parallelism, and `.nd2` reading without Bio-Formats.
 
-One deliberate difference: the macro's rolling-ball background subtraction is
-replaced by a Gaussian high-pass, which is visually equivalent for the smooth
-illumination gradients in these images and orders of magnitude faster.
-
----
+The macro's rolling-ball background subtraction is replaced by a Gaussian
+high-pass, visually equivalent for smooth illumination gradients and much faster.
 
 ## Credits
 
-Written by **Klaudia Saladauskas** and **Leonardo Cecchin**, from the Fiji macro
-`reference_fiji_macros/merge.ijm`. The authorship is shown under *Help > About*
-in the GUI and recorded in every `processing_log.txt` and `settings_used.json`.
+Written by **Klaudia Saladauskas** and **Leonardo Cecchin** from the Fiji macro
+`reference_fiji_macros/merge.ijm`. Authorship is shown under *Help > About* and
+recorded in every `processing_log.txt` and `settings_used.json`.
