@@ -1,0 +1,36 @@
+name: Build Windows app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt pyinstaller
+      - run: python tools/build_exe.py
+      - name: Smoke test the built exe
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\ConfocalProcessor\ConfocalProcessor.exe -ArgumentList "--selftest" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "selftest exit code $($p.ExitCode)" }
+      - run: Compress-Archive dist\ConfocalProcessor ConfocalProcessor-windows.zip
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ConfocalProcessor-windows
+          path: ConfocalProcessor-windows.zip
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ConfocalProcessor-windows.zip

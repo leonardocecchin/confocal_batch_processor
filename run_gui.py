@@ -11,6 +11,15 @@ if __name__ == "__main__":
     # re-running this file; without this the pool would spawn GUIs instead.
     multiprocessing.freeze_support()
 
+    # CI smoke test for the frozen build: import everything, then exit
+    # without opening a window.
+    import sys
+
+    if "--selftest" in sys.argv:
+        import confocal.cli, confocal.pipeline  # noqa: F401
+        import nd2, skimage.io, scipy.ndimage, tifffile, pandas, matplotlib  # noqa: F401
+        sys.exit(0)
+
     # If the window ever does freeze, `kill -USR1 <pid>` prints the stack of
     # every thread to the terminal, which says where it is stuck.
     faulthandler.enable()

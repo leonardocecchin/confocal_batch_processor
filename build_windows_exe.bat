@@ -20,24 +20,7 @@ if errorlevel 1 ( echo Could not install PyInstaller. & pause & exit /b 1 )
 echo(
 echo ==^> Building ^(several minutes, and the result is large^)
 
-REM scikit-image, scipy and nd2 resolve plugins at run time, so PyInstaller's
-REM import scanner cannot see them; they are named explicitly here. If the exe
-REM starts and then dies with ModuleNotFoundError, add the module the same way.
-".venv\Scripts\python.exe" -m PyInstaller ^
-    --noconfirm ^
-    --windowed ^
-    --name ConfocalProcessor ^
-    --collect-submodules skimage ^
-    --collect-submodules scipy ^
-    --collect-submodules nd2 ^
-    --collect-data skimage ^
-    --collect-data matplotlib ^
-    --hidden-import edt ^
-    --hidden-import tifffile ^
-    --hidden-import imagecodecs ^
-    --hidden-import PIL._tkinter_finder ^
-    --hidden-import pandas ^
-    run_gui.py
+".venv\Scripts\python.exe" tools\build_exe.py
 
 if errorlevel 1 (
     echo(
