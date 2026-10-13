@@ -11,6 +11,16 @@ if __name__ == "__main__":
     # re-running this file; without this the pool would spawn GUIs instead.
     multiprocessing.freeze_support()
 
+    # If the window ever does freeze, `kill -USR1 <pid>` prints the stack of
+    # every thread to the terminal, which says where it is stuck.
+    try:
+        faulthandler.enable()
+        import signal
+
+        faulthandler.register(signal.SIGUSR1, all_threads=True)
+    except (AttributeError, ValueError, RuntimeError):
+        pass  # no SIGUSR1 on Windows; no stderr in a windowed exe
+
     # Import check for CI, no window.
     import sys
 
@@ -18,15 +28,5 @@ if __name__ == "__main__":
         import confocal.cli, confocal.pipeline  # noqa: F401
         import nd2, skimage.io, scipy.ndimage, tifffile, pandas, matplotlib  # noqa: F401
         sys.exit(0)
-
-    # If the window ever does freeze, `kill -USR1 <pid>` prints the stack of
-    # every thread to the terminal, which says where it is stuck.
-    faulthandler.enable()
-    try:
-        import signal
-
-        faulthandler.register(signal.SIGUSR1, all_threads=True)
-    except (AttributeError, ValueError):
-        pass  # SIGUSR1 does not exist on Windows
 
     main()

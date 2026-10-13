@@ -23,6 +23,13 @@ jobs:
         run: |
           $p = Start-Process dist\ConfocalProcessor\ConfocalProcessor.exe -ArgumentList "--selftest" -Wait -PassThru
           if ($p.ExitCode -ne 0) { throw "selftest exit code $($p.ExitCode)" }
+      - name: Launch the GUI and check it stays up
+        shell: pwsh
+        run: |
+          $p = Start-Process dist\ConfocalProcessor\ConfocalProcessor.exe -PassThru
+          Start-Sleep -Seconds 15
+          if ($p.HasExited) { throw "GUI exited early with code $($p.ExitCode)" }
+          Stop-Process $p
       - run: Compress-Archive dist\ConfocalProcessor ConfocalProcessor-windows.zip
         shell: pwsh
       - uses: actions/upload-artifact@v5
