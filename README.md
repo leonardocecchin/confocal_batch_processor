@@ -12,8 +12,42 @@ Bio-Formats, no Java.
 
 ---
 
-> **On Windows?** Follow [WINDOWS.md](WINDOWS.md) instead — it covers
+> **On Windows?** The easiest route needs no Python at all: use the pre-built
+> app described under [Windows: pre-built app](#windows-pre-built-app-no-python-needed).
+> To run from source instead, follow [WINDOWS.md](WINDOWS.md) — it covers
 > installing Python and Git from scratch, then `setup.bat` and `run_gui.bat`.
+
+## Windows: pre-built app (no Python needed)
+
+1. On the repository page, click **Releases** (right-hand side) and download
+   **`ConfocalProcessor-windows.zip`** from the newest release. No GitHub
+   account is needed.
+2. Right-click the zip → **Extract All** into a short, local folder such as
+   `C:\Users\<you>\ConfocalProcessor`. Avoid OneDrive and network drives, and
+   do not run the exe from inside the zip.
+3. Open the extracted `ConfocalProcessor` folder and double-click
+   **`ConfocalProcessor.exe`**. Keep the whole folder together, because the exe
+   needs the files next to it. Make a Desktop shortcut to the exe if you like.
+
+**Collaborators with a GitHub login** can also take a build straight from the
+**Actions** tab → **Build Windows app** → a green run → *Artifacts* →
+`ConfocalProcessor-windows` (a zip containing `ConfocalProcessor-windows.zip`).
+Anonymous visitors cannot download artifacts, and they expire after 90 days, so
+use Releases for anything you hand to other people.
+
+**Maintainers: publishing a release.** Pushing a version tag builds the app and
+attaches the zip to a release automatically:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Notes:
+- Windows SmartScreen may say "Windows protected your PC" because the app is
+  not code-signed. Click **More info → Run anyway**.
+- The first start takes several seconds while antivirus scans the files.
+- To update, delete the old folder and repeat the steps with the newer build.
 
 ## Install
 

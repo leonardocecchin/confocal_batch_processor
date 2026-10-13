@@ -1,10 +1,9 @@
 # Installing on Windows 11
 
-> **Easiest route: no Python needed.** Download `ConfocalProcessor-windows.zip`
-> from the repository's *Releases* page (or from the latest run under *Actions*
-> → *Build Windows app*), extract it to a local folder (not OneDrive), and
-> double-click `ConfocalProcessor.exe`. The steps below are only for running
-> from source.
+> **Easiest route: no Python needed.** On the repository page open *Releases*,
+> download `ConfocalProcessor-windows.zip` (no GitHub account needed), extract it
+> to a local folder (not OneDrive), and double-click `ConfocalProcessor.exe`.
+> The steps below are only for running from source.
 
 *Confocal batch processor — by Klaudia Saladauskas and Leonardo Cecchin*
 
